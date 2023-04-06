@@ -25,7 +25,6 @@ print(df.shape)
 
 
 #%% [markdown]
-
 # Summary Statistics
 
 #%%
@@ -41,22 +40,19 @@ print(df.describe())
 df.dropna(inplace=True)
 
 #%%
-
 # Changing column names
 
 df.rename(columns = {'job_role':'job', 'is_married':'marital','is_smoker':'smoker', 'is_hereditary':'hereditary'}, inplace = True)
 #%%
-df.columns
+print(df.columns)
 #%%
-
 # Changing male and female to 0 and 1, respectively
-
 df['gender'].replace('female', 0, inplace=True)
 df['gender'].replace('male', 1, inplace=True)
 
-df['gender'].unique()
+print(df['gender'].unique())
 
-df.head()
+print(df.head())
 
 #%%
 
@@ -198,4 +194,18 @@ plt.show()
 ## Modeling
 
 #%%
+summary_stats = df['stress'].describe()
+print(summary_stats)
+category_counts = df['stress'].value_counts()
+print(category_counts)
+category_counts = df['stress'].value_counts()
 
+#%%
+# Categorize "stress" column
+category_counts.plot(kind='bar')
+plt.xlabel('Stress Levels')
+plt.ylabel('Frequency')
+plt.title('Frequency of Stress Levels')
+plt.xticks(rotation=270)
+plt.show()
+# %%
