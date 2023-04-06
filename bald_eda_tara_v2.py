@@ -66,6 +66,34 @@ df['stress'] = df['stress'].astype('int')
 df['age'] = df['age'].astype('int')
 
 
+
+#%%
+summary_stats = df['stress'].describe()
+print(summary_stats)
+category_counts = df['stress'].value_counts()
+print(category_counts)
+category_counts = df['stress'].value_counts()
+
+#%%
+# Categorize "stress" column
+category_counts.plot(kind='bar')
+plt.xlabel('Stress Levels')
+plt.ylabel('Frequency')
+plt.title('Frequency of Stress Levels')
+plt.xticks(rotation=270)
+plt.show()
+# %%
+
+# Categorizing stress to three categories: Low, Medium, High
+df['stress'] = df['stress'].replace([1, 2, 3], 'Low')
+df['stress'] = df['stress'].replace([4, 5, 6, 7], 'Medium')
+df['stress'] = df['stress'].replace([8, 9, 10], 'High')
+
+# %%
+df['stress'].unique()
+# %%
+df.columns
+
 #%%[markdown]
 
 ## Plots
@@ -192,20 +220,3 @@ plt.show()
 
 #%%[markdown]
 ## Modeling
-
-#%%
-summary_stats = df['stress'].describe()
-print(summary_stats)
-category_counts = df['stress'].value_counts()
-print(category_counts)
-category_counts = df['stress'].value_counts()
-
-#%%
-# Categorize "stress" column
-category_counts.plot(kind='bar')
-plt.xlabel('Stress Levels')
-plt.ylabel('Frequency')
-plt.title('Frequency of Stress Levels')
-plt.xticks(rotation=270)
-plt.show()
-# %%
