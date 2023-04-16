@@ -34,9 +34,7 @@ print(df.describe())
 # Data Cleaning
 
 #%%
-
 # Dropping nulls
-
 df.dropna(inplace=True)
 
 #%%

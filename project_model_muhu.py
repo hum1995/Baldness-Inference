@@ -1,8 +1,10 @@
 #%%
 #import packages
+import copy as cp
 import pandas as pd
 import numpy as np
 import seaborn as sns
+import matplotlib
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import statsmodels.api as sm
@@ -258,4 +260,84 @@ plt.ylabel('Importance')
 plt.title('Feature Importance Ranking')
 plt.show()
 
+#%%[markdown]
+# # Logistic Regression
+# * Create a new column `bald_likelihod` indicating whether an individual is likely to develop baldness
+# * The way we create this column is that `bald_likelihood = 1 if bald_prob > 0.59` 
+# * Otherwise `bald_prob = 0`
+# * Then, we will build a logistic regression to predict `bald_likelihood`
+
+matplotlib.rcParams.update({'font.size': 16})
+
+lklihood = lambda x: 1 if x > 0.59 else 0
+df_encoded2 = cp.deepcopy(df_encoded)
+df_encoded2['bald_likelihood'] = list(map(lklihood, df_encoded['bald_prob']))
+print("The column baldness_likelihood has been created as desired")
+
+#%%[markdown]
+# * We plot a Histogram to see if the Baldness Likelihood is balanced in the dataset.
+
+plt.figure(figsize=(9, 8))
+plt.hist(df_encoded2['bald_likelihood'], bins=[0,0.9,1,2], align='left')
+plt.xticks(range(2))
+plt.xlabel("Baldness Likelihood")
+plt.ylabel("Count")
+plt.show()
+
+print(f"Proportion of Baldness Likelihood 1: {len(df_encoded2[df_encoded2['bald_likelihood']==1])/len(df_encoded2):.2f}%")
+print(f"Proportion of Baldness Likelihood 0: {len(df_encoded2[df_encoded2['bald_likelihood']==0])/len(df_encoded2):.2f}%")
+
+#%%[markdown]
+# * Yes, the data set is balanced. We have about the same number of people with Baldness Likelihood 1 and Baldness Likelihood 0
+
+
 # %%
+X = df_encoded2.drop(labels=['bald_prob', 'bald_likelihood'], axis=1)
+y = df_encoded2['bald_likelihood']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+#%%[markdown]
+# ## Features Selection and Model Building
+# * For feature selection, we will use the Recursive Feature Elimination `(RFE)` algorithm to select only important features.
+# * We start with 10 features. 
+# * If all the features have `P-value < 0.05`, we will try to increase the number of features.
+# * If some features have `P-values > 0.05`, we remove them and the model is completed.
+
+# use RFE to select features for the model
+from sklearn.feature_selection import RFE
+from sklearn.linear_model import LogisticRegression
+import statsmodels.api as sm
+
+logreg = LogisticRegression()
+rfe = RFE(logreg, n_features_to_select=10)
+rfe = rfe.fit(X_train, y_train)
+
+X_trans = X_train[rfe.get_feature_names_out()]
+X_test_trans = X_test[rfe.get_feature_names_out()]
+
+
+model= sm.Logit(y_train,X_trans)
+
+result=model.fit()
+
+print(result.summary2())
+print("We drop the variable weight")
+# %%
+X_trans = X_trans.drop(labels=["weight"], axis = 1)
+X_test_trans = X_test_trans.drop(labels=["weight"], axis = 1)
+model= sm.Logit(y_train, X_trans)
+
+result=model.fit()
+
+print(result.summary2())
+
+# %%[markdown]
+from sklearn.metrics import (confusion_matrix, 
+                           accuracy_score)
+# Model Evaluation
+# 1. Confusion Matrix
+
+model = logreg.fit(X_trans, y_train)
+y_pred = logreg.fit(X_trans, y_train).predict(X_test_trans)
+cmatrix = confusion_matrix(y_pred, y_test) 
+print(cmatrix)
