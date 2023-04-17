@@ -341,3 +341,125 @@ model = logreg.fit(X_trans, y_train)
 y_pred = logreg.fit(X_trans, y_train).predict(X_test_trans)
 cmatrix = confusion_matrix(y_pred, y_test) 
 print(cmatrix)
+
+#%%[markdown]
+
+# 2. Scores:
+
+# 1. $\text{Accuracy} = \frac{TP}{\text{Total numbre of predictions}}$ <br>
+# The accuracy measures how many positive predictions are actually correct out of all predictions made. 
+
+# 2. $\text{Precision} = \frac{TP}{FP + TP}$
+# The precision is how many positive predictions are correct out of all positive predicitions made.
+# A value close to `1` means not many False positive. A value close to `0` means a lot of False positive predictions.
+
+# * $\text{Recall} = \frac{TP}{FN + TP}$
+# The recall is out of all incorrect negative and correct positive predictions made, how many are correct positive predicitions?
+# A value close to `1` means not many incorrect negative predictions. A value close to `0` means a lot of false negative.
+
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+print(f"The accuracy score = {accuracy_score(y_test, y_pred):.2f}")
+print(f"The precision score = {precision_score(y_test, y_pred):.2f}")
+print(f"The recall score = {recall_score(y_test, y_pred):.2f}")
+
+#%%[markdown]
+# 2. The ROC Curve
+
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+
+logit_roc_auc = roc_auc_score(y_test, logreg.predict(X_test_trans))
+fpr, tpr, thresholds = roc_curve(y_test, logreg.predict_proba(X_test_trans)[:,1])
+plt.figure(figsize=(9, 8))
+plt.plot(fpr, tpr, label='Logistic Regression (area = %0.2f)' % logit_roc_auc)
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Logistic Regression of Baldness Likelihood ROC Curve')
+plt.legend(loc="lower right")
+plt.savefig('Log_ROC')
+plt.show()
+#%%[markdown]
+# ## Conclusion 
+# The model does not perform well. It is indistinguishable from a model that assigns baldness likelihood 0 or 1 randomly.
+
+# %%[markdown]
+# # K-Means Clustering
+# We observed that our logistic regression model performed poorly in predicting the `baldness likelihood`. 
+# To understand why a simple logistic regression classification was not succesful, and to gain further insight into the relationship
+# between the variables, we perform a `K-Means Clustering.`
+
+# %%
+from sklearn.cluster import KMeans
+y = df_encoded2['bald_prob']
+
+color_map = {0:'teal', 1:'blue', 2:'magenta'}
+
+def make_clusters(col, nclusters):
+
+    xdata = np.array(X[col])
+
+    data = list(zip(xdata, y))
+    kmeans = KMeans(n_clusters=nclusters)
+    kmeans.fit(data)
+
+    return kmeans.labels_
+
+# determine the number of clusters with the Elbow method
+def get_inertia_plots(col):
+    inertias = []
+    data = list(zip(X[col], y))
+    for i in range(1,11):
+        kmeans = KMeans(n_clusters=i)
+        kmeans.fit(data)
+        inertias.append(kmeans.inertia_)
+
+    plt.plot(range(1,11), inertias, marker='o')
+    #plt.title('Elbow method')
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Inertia')
+    plt.show()
+
+# Run this cell only once. We don't need to run these codes every time since we know the results.
+
+# get_inertia_plots('age')
+# get_inertia_plots('salary')
+print("Based on the Elbow methods, we choose 3 clusters for age and salary.")
+
+#%%
+# Get clusters for age and salary
+fig, (ax1, ax2) = plt.subplots(1,2, figsize=(12,6))
+ax1.scatter(X['age'],y, c=[color_map[j] for j in make_clusters('age', 3)] )
+ax2.scatter(X['salary'],y, c=[color_map[j] for j in make_clusters('salary', 3)])
+ax1.set_xlabel("Age")
+ax1.set_ylabel("Baldness Probabolity")
+ax1.set_title("Bladness probability\n with age")
+ax2.set_xlabel("Salary")
+ax2.set_ylabel("Baldness Probabolity")
+ax2.set_title("Bladness probability\n with salary")
+plt.show()
+
+#%%
+# get clusters for weight and height
+# get_inertia_plots('weight')
+# get_inertia_plots('height')
+print("Based on the Elbow methods, we choose 3 clusters for weight and height.")
+# %%
+col1 = 'weight'
+col2 = 'height'
+fig, (ax1, ax2) = plt.subplots(1,2, figsize=(12,6))
+ax1.scatter(X[col1],y, c=[color_map[j] for j in make_clusters(col1, 3)])
+ax2.scatter(X[col2],y, c=[color_map[j] for j in make_clusters(col2, 3)])
+ax1.set_xlabel(f"{col1}")
+ax1.set_ylabel("Baldness Probabolity")
+ax1.set_title(f"Bladness probability\n with {col1}")
+ax2.set_xlabel(f"{col2}")
+ax2.set_ylabel("Baldness Probabolity")
+ax2.set_title(f"Bladness probability\n with {col2}")
+plt.show()
+
+# %%
+df_encoded2.head()
+# %%
