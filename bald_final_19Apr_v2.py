@@ -13,54 +13,32 @@ from bioinfokit.analys import stat
 from statsmodels.tools.tools import add_constant
 
 
-#%%
-#open data
+#%%[markdown]
+# # Load the dataset
 df = pd.read_csv('bald_probability.csv')
+print("The dataset has been loaded.")
+#%%[markdown]
+# # Data Pre-processing and Exploratory Data Analysis (EDA) 
+#%%[markdown]
+# ## Overview and Summary Statistics
+print("\nMissing values: \n",df.isna().sum()) # check for NA values
+print("\nFirst five rows of the dataset:\n",df.head()) # take a look at our dataset
+print("\nStructure of the dataset: ", df.info()) # columns, nulls, and data types
+print("\nThe shape of the dataset: ", df.shape) 
+print("Structure: \n")
+print("Summary statistics: \n", df.describe())
 
 #%%[markdown]
-## EDA (Exploratory Data Analysis) / Pre-processing
-
-#%%
-print(df.isna().sum()) # check for NA values
-print(df.head()) # take a look at our dataset
-print(df.info()) # columns, nulls, and data types
-print(df.shape) 
-
-
-#%% [markdown]
-# Summary Statistics
-
-#%%
-print(df.describe())
-
-#%%[markdown]
-# Data Cleaning
-
-#%%
-
-# Dropping nulls
+# ## Data Cleaning
+# * Drop nulls
+# * Changing column names
+# * Encode the gender column: 0 -> Female, 1 -> Male
+# * Change `float` columns to `int` where appropriate
 
 df.dropna(inplace=True)
-
-#%%
-# Changing column names
-
 df.rename(columns = {'job_role':'job', 'is_married':'marital','is_smoker':'smoker', 'is_hereditary':'hereditary'}, inplace = True)
-#%%
-print(df.columns)
-#%%
-# Changing male and female to 0 and 1, respectively
 df['gender'].replace('female', 0, inplace=True)
 df['gender'].replace('male', 1, inplace=True)
-
-print(df['gender'].unique())
-
-print(df.head())
-
-#%%
-
-#Changing float columns (gender, martial, hereditary, smoker, stress, and age) to integers
-
 df['gender'] = df['gender'].astype('int')
 df['marital'] = df['marital'].astype('int')
 df['hereditary'] = df['hereditary'].astype('int')
@@ -68,6 +46,7 @@ df['smoker'] = df['smoker'].astype('int')
 df['stress'] = df['stress'].astype('int')
 df['age'] = df['age'].astype('int')
 
+print("The tasks above have been succesfully completed.")
 
 
 #%%
