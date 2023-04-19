@@ -49,32 +49,31 @@ df['age'] = df['age'].astype('int')
 print("The tasks above have been succesfully completed.")
 
 
-#%%
+#%%[markdown]
+# ## Summary Statistics (after processing)
 summary_stats = df['stress'].describe()
 print(summary_stats)
 category_counts = df['stress'].value_counts()
 print(category_counts)
 category_counts = df['stress'].value_counts()
 
-#%%
-# Categorize "stress" column
+#%%[markdown]
+# ## Categorize `stress` column
 category_counts.plot(kind='bar')
 plt.xlabel('Stress Levels')
 plt.ylabel('Frequency')
 plt.title('Frequency of Stress Levels')
 plt.xticks(rotation=270)
 plt.show()
-# %%
+# %%[markdown]
+# Based on the plot above, we categorize the stress level as follows:
+# * Low: $\big[1,2,3\big]$
+# * Medium: $\big[4,5,6,7\big]$
+# * High: $\big[8,9,10\big]$
 
-# Categorizing stress to three categories: Low, Medium, High
 df['stress'] = df['stress'].replace([1, 2, 3], 'Low')
 df['stress'] = df['stress'].replace([4, 5, 6, 7], 'Medium')
 df['stress'] = df['stress'].replace([8, 9, 10], 'High')
-
-# %%
-df['stress'].unique()
-# %%
-df.columns
 
 #%%[markdown]
 
