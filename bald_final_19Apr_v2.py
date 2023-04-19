@@ -213,6 +213,11 @@ plt.xlabel('Salary')
 plt.ylabel('Baldness Probability')
 plt.show()
 
+sns.regplot(x= df['age'], y= df['bald_prob'])
+plt.title('Age and Baldness Probability')
+plt.xlabel('Age')
+plt.ylabel('Baldness Probability')
+plt.show()
 
 #%%[markdown]
 
