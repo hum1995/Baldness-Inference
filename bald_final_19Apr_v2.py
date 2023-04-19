@@ -11,7 +11,18 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from bioinfokit.analys import stat
 from statsmodels.tools.tools import add_constant
+from tabulate import tabulate
+import pprint
 
+# create a pretty print function for table
+def pretty_print(message, table):
+
+    print(message)
+    print(tabulate(table, headers='keys', tablefmt='psql'))
+
+def pretty_print_dict(message, my_dict):
+    for row in zip(*([key] + (value) for key, value in sorted(my_dict.items()))):
+        print(*row)
 
 #%%[markdown]
 # # Load the dataset
@@ -21,13 +32,14 @@ print("The dataset has been loaded.")
 # # Data Pre-processing and Exploratory Data Analysis (EDA) 
 #%%[markdown]
 # ## Overview and Summary Statistics
-print("\nMissing values: \n",df.isna().sum()) # check for NA values
-print("\nFirst five rows of the dataset:\n",df.head()) # take a look at our dataset
+#%%
+pretty_print("First Five rows (Head)", df.head())
+#%%
+print("\nMissing values: \n", df.isna().sum()) # check for NA values
 print("\nStructure of the dataset: ", df.info()) # columns, nulls, and data types
 print("\nThe shape of the dataset: ", df.shape) 
-print("Structure: \n")
-print("Summary statistics: \n", df.describe())
-
+#%%
+pretty_print("Summary statistics", df.describe())
 #%%[markdown]
 # ## Data Cleaning
 # * Drop nulls
@@ -77,11 +89,11 @@ df['stress'] = df['stress'].replace([8, 9, 10], 'High')
 
 #%%[markdown]
 
-## Plots
+# ## Plots
 
 #%%[markdown]
 
-# Histogram
+# ### Histogram
 
 #%%
 df['bald_prob'].hist()
@@ -91,7 +103,7 @@ plt.show()
 
 #%%[markdown]
 
-# KDE Plot
+# ### KDE Plot
 
 #%%
 sns.kdeplot(df['bald_prob'], shade=True)
@@ -101,23 +113,17 @@ plt.show()
 
 #%% [markdown]
 
-# Skew and Kurtosis
+# ###Skew and Kurtosis
 
 print('The skew is:', round(df['bald_prob'].skew(), 4))
 print('The kurtosis is:', round(df['bald_prob'].kurt(), 4))
 print('Both values are close to zero, indicating a relatively normal distribution, which is seen with the histogram plot.')
 
-
-#%%
-
-
 #%%[markdown]
 
-# Violin Plots: Categorical Variables vs Baldness Probability
+# ### Violin Plots: Categorical Variables vs Baldness Probability
 
 #%%
-
-
 sns.violinplot(x="gender", y="bald_prob", data=df, palette="Pastel1")
 plt.title('Baldness Probability and Gender')
 plt.xlabel("Gender")
@@ -166,13 +172,11 @@ plt.xlabel("Stress Level")
 plt.ylabel("Baldness Probability")
 plt.show()
 
-
 #%%[markdown]
 
-# Scatterplots with Line of Best Fit: Continuous Variables vs Baldness Probability
+# ### Scatterplots with Line of Best Fit: Continuous Variables vs Baldness Probability
 
 #%%
-
 sns.regplot(x= df['weight'], y= df['bald_prob'])
 plt.title('Weight and Baldness Probability')
 plt.xlabel('Weight')
@@ -199,40 +203,40 @@ plt.show()
 
 #%%[markdown]
 
-# %%
-# QQ plot for 'age' column
+#%%[markdown]
+# ### QQ plot for 'age' column
 sm.qqplot(df['age'], line='s')
 plt.title("QQ Plot for 'age'")
 plt.show()
 
 
-#%%
-# QQ plot for 'salary' column
+#%%[markdown]
+# ### QQ plot for 'salary' column
 sm.qqplot(df['salary'], line='s')
 plt.title("QQ Plot for 'salary'")
 plt.show()
 
 
-#%%
-# QQ plot for 'weight' column
+#%%[markdown]
+# ### QQ plot for 'weight' column
 sm.qqplot(df['weight'], line='s')
 plt.title("QQ Plot for 'weight'")
 plt.show()
 
-#%%
-# Generating QQ plot for 'height'
+#%%[markdown]
+# ### Generating QQ plot for 'height'
 sm.qqplot(df['height'], line='s')
 plt.title("QQ Plot for 'height'")
 plt.show()
 
-#%% 
-# Generating QQ plot for 'bald_prob'
+#%%[markdown] 
+# ### Generating QQ plot for 'bald_prob'
 sm.qqplot(df['bald_prob'], line='s')
 plt.title("QQ Plot for 'bald_prob'")
 plt.show()
 
-# %%
-# Performing ANOVA
+# %%[markdown]
+# ### Performing ANOVA
 model = ols('salary ~ education', data=df).fit()
 anova_table = sm.stats.anova_lm(model, typ=2)
 
@@ -240,8 +244,8 @@ anova_table = sm.stats.anova_lm(model, typ=2)
 print("ANOVA Table:\n", anova_table)
 
 
-# %%
-# Performing ANOVA
+#%%[markdown]
+# ### Performing ANOVA
 provinces = df['province'].unique()
 grouped_data = []
 for province in provinces:
@@ -256,8 +260,8 @@ print("F-statistic: ", f_stat)
 print("p-value: ", p_value)
 
 
-# %%
-# Performing ANOVA on 'age' based on 'gender' groups
+#%%[markdown]
+# ### Performing ANOVA on 'age' based on 'gender' groups
 grouped_data = df.groupby('gender')['age']
 f_statistic, p_value = stats.f_oneway(*[grouped_data.get_group(x) for x in grouped_data.groups])
 print("One-way ANOVA Results for 'age' based on 'gender' groups:")
@@ -265,8 +269,8 @@ print(f"F-statistic: {f_statistic:.4f}")
 print(f"p-value: {p_value:.4f}")
 
 
-# %%
-# Performing ANOVA on 'salary' based on 'job' groups
+#%%[markdown]
+# ### Performing ANOVA on 'salary' based on 'job' groups
 grouped_data = df.groupby('job')['salary']
 f_statistic, p_value = stats.f_oneway(*[grouped_data.get_group(x) for x in grouped_data.groups])
 print("One-way ANOVA Results for 'salary' based on 'job' groups:")
@@ -274,8 +278,8 @@ print(f"F-statistic: {f_statistic:.4f}")
 print(f"p-value: {p_value:.4f}")
 
 
-# %%
-#Performing ANOVA on 'weight' based on 'marital' groups
+#%%[markdown]
+# ### Performing ANOVA on 'weight' based on 'marital' groups
 grouped_data = df.groupby('marital')['weight']
 f_statistic, p_value = stats.f_oneway(*[grouped_data.get_group(x) for x in grouped_data.groups])
 print("One-way ANOVA Results for 'weight' based on 'marital' groups:")
