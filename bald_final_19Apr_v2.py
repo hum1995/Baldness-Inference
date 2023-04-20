@@ -48,6 +48,7 @@ pretty_print("Summary statistics", df.describe())
 # * Change `float` columns to `int` where appropriate
 
 df.dropna(inplace=True)
+df.reset_index(drop=True, inplace=True)
 df.rename(columns = {'job_role':'job', 'is_married':'marital','is_smoker':'smoker', 'is_hereditary':'hereditary'}, inplace = True)
 df['gender'].replace('female', 0, inplace=True)
 df['gender'].replace('male', 1, inplace=True)
@@ -370,8 +371,6 @@ encoded_cat_vars = pd.DataFrame(enc.fit_transform(df[cat_vars]), columns=enc.get
 # Concatenate the original dataframe with the encoded categorical variables
 df_encoded = pd.concat([df.drop(cat_vars, axis=1), encoded_cat_vars], axis=1)
 
-# dropped the null values. Correct this if this is not what was desired
-df_encoded.dropna(inplace=True)
 # %%
 # Fit linear regression model
 X = df_encoded.drop('bald_prob', axis=1)
@@ -510,12 +509,12 @@ for feature, coef in coefficients.items():
     print(f"{feature}: {coef:.4f}")
 
 # %%[markdown]
-# Random Forest Model
+# Random Forest Model by default
 
 #%%
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-# Assuming 'df_encoded' is your encoded dataframe with all the features
+
 X_all_features = df_encoded.drop('bald_prob', axis=1)
 y_all_features = df_encoded['bald_prob']
 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
@@ -544,6 +543,245 @@ plt.xlabel('Features')
 plt.ylabel('Importance')
 plt.title('Feature Importance Ranking')
 plt.show()
+
+#%%
+# Tune hyperparameters using GridSearchCV
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X_all_features, y_all_features, test_size=0.2, random_state=42)
+
+# Define the hyperparameter search space
+param_grid = {
+    'n_estimators': [10, 50, 100, 200],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'bootstrap': [True, False]
+}
+
+# Initialize the GridSearchCV object
+grid_search = GridSearchCV(estimator=RandomForestRegressor(random_state=42), param_grid=param_grid, cv=5, n_jobs=-1)
+
+# Fit the GridSearchCV object to the training data
+grid_search.fit(X_train, y_train)
+
+# Get the best parameters
+best_params = grid_search.best_params_
+print(f"Best parameters found: {best_params}")
+
+#%%
+# no run
+# Since some optimal hyperparameters' values hit the boundary, continue to try
+# Define an extended hyperparameter search space
+
+#%%
+# Retrain the Random Forest model with the optimal hyperparameters
+optimal_rf_model = RandomForestRegressor(bootstrap=True, max_depth=10, min_samples_leaf=2, min_samples_split=2, n_estimators=200, random_state=42)
+optimal_rf_model.fit(X_all_features, y_all_features)
+
+# Calculate the feature importances
+feature_importances_optimal = optimal_rf_model.feature_importances_
+importance_df_optimal = pd.DataFrame({'Feature': X_all_features.columns, 'Importance': feature_importances_optimal})
+importance_df_sorted_optimal = importance_df_optimal.sort_values(by='Importance', ascending=False)
+
+# Plot the feature importance ranking
+print("Feature Importance Ranking (Optimal Hyperparameters):\n")
+print(importance_df_sorted_optimal)
+plt.figure(figsize=(12, 8))
+plt.bar(importance_df_sorted_optimal['Feature'], importance_df_sorted_optimal['Importance'])
+plt.xticks(rotation=90)
+plt.xlabel('Features')
+plt.ylabel('Importance')
+plt.title('Feature Importance Ranking (Optimal Hyperparameters)')
+plt.show()
+
+#%%
+# Test overfitting
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X_all_features, y_all_features, test_size=0.2, random_state=42)
+
+# Train the model with the optimal hyperparameters
+optimal_rf_model.fit(X_train, y_train)
+
+# Make predictions on the training and test sets
+y_train_pred = optimal_rf_model.predict(X_train)
+y_test_pred = optimal_rf_model.predict(X_test)
+
+# Calculate the MSE and R2 scores for the training and test sets
+mse_train = mean_squared_error(y_train, y_train_pred)
+mse_test = mean_squared_error(y_test, y_test_pred)
+r2_train = r2_score(y_train, y_train_pred)
+r2_test = r2_score(y_test, y_test_pred)
+
+# Print the results
+print("Training set: Mean squared error:", mse_train)
+print("Training set: R2 score:", r2_train)
+print("Test set: Mean squared error:", mse_test)
+print("Test set: R2 score:", r2_test)
+
+#%%
+# XGBoost by default
+import xgboost as xgb
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Split the dataset into training and testing sets
+X = df_encoded.drop(columns=['bald_prob'])
+y = df_encoded['bald_prob']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+# Train the XGBoost regression model
+xg_reg = xgb.XGBRegressor(objective='reg:squarederror', colsample_bytree=0.3, learning_rate=0.1, max_depth=5, alpha=10, n_estimators=100)
+xg_reg.fit(X_train, y_train)
+
+# Predict "bald_prob" for the test set
+y_pred = xg_reg.predict(X_test)
+
+# Evaluate the model performance
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"Mean squared error: {mse}")
+print(f"R2 score: {r2}")
+
+# Extract the feature importance ranking
+feature_importances = xg_reg.feature_importances_
+importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': feature_importances})
+importance_df = importance_df.sort_values('Importance', ascending=False)
+print(importance_df)
+
+#%%
+# Plot the feature importance ranking
+fig, ax = plt.subplots(figsize=(12, 8))
+importance_df.plot(kind='bar', x='Feature', y='Importance', legend=None, ax=ax)
+plt.xticks(rotation=90)
+plt.xlabel("Features")
+plt.ylabel("Importance")
+plt.title("Feature Importance Ranking")
+plt.tight_layout()
+plt.show()
+
+#%%
+# Hyperparameter tuning using randomized search
+import xgboost as xgb
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.metrics import mean_squared_error, r2_score, make_scorer
+
+# Split the dataset into training and testing sets
+X = df_encoded.drop(columns=['bald_prob'])
+y = df_encoded['bald_prob']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+
+# Create the XGBoost regressor
+xg_reg = xgb.XGBRegressor(objective='reg:squarederror')
+
+# Set up the hyperparameter search
+param_dist = {
+    'colsample_bytree': [0.3, 0.5, 0.7, 0.9],
+    'learning_rate': [0.01, 0.03, 0.05, 0.1, 0.2],
+    'max_depth': [3, 4, 5, 6, 7, 8],
+    'alpha': [0, 1, 5, 10, 20],
+    'n_estimators': [50, 100, 150, 200, 300],
+}
+
+scoring = {
+    'MSE': make_scorer(mean_squared_error, greater_is_better=False),
+    'R2': make_scorer(r2_score)
+}
+
+# Perform Randomized Search with cross-validation
+random_search = RandomizedSearchCV(
+    xg_reg, 
+    param_distributions=param_dist, 
+    n_iter=50, 
+    scoring=scoring, 
+    refit='R2', 
+    cv=5,
+    verbose=1,
+    n_jobs=-1,
+    random_state=0
+)
+
+random_search.fit(X_train, y_train)
+
+# Print the best parameters
+print("Best parameters found:")
+print(random_search.best_params_)
+
+# Train the XGBoost regression model with the best parameters
+best_xg_reg = random_search.best_estimator_
+best_xg_reg.fit(X_train, y_train)
+
+# Predict "bald_prob" for the test set
+y_pred = best_xg_reg.predict(X_test)
+
+# Evaluate the model performance
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print(f"Mean squared error: {mse}")
+print(f"R2 score: {r2}")
+
+# Extract the feature importance ranking
+feature_importances = best_xg_reg.feature_importances_
+importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': feature_importances})
+importance_df = importance_df.sort_values('Importance', ascending=False)
+print(importance_df)
+
+#%%
+# After the optimal hyperparameter
+# Train the XGBoost regression model with the best parameters
+best_xg_reg = xgb.XGBRegressor(
+    objective='reg:squarederror',
+    n_estimators=50,
+    max_depth=4,
+    learning_rate=0.2,
+    colsample_bytree=0.7,
+    alpha=1
+)
+best_xg_reg.fit(X_train, y_train)
+
+# Extract the feature importance ranking
+feature_importances = best_xg_reg.feature_importances_
+importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': feature_importances})
+importance_df = importance_df.sort_values('Importance', ascending=False)
+
+# Plot the feature importance ranking
+fig, ax = plt.subplots(figsize=(12, 8))
+importance_df.plot(kind='bar', x='Feature', y='Importance', legend=None, ax=ax)
+plt.xticks(rotation=90)
+plt.xlabel("Features")
+plt.ylabel("Importance")
+plt.title("Feature Importance Ranking")
+plt.tight_layout()
+plt.show()
+
+#%%
+# Detect overfitting
+# Predict "bald_prob" for the training set
+y_train_pred = best_xg_reg.predict(X_train)
+
+# Evaluate the model performance on the training set
+mse_train = mean_squared_error(y_train, y_train_pred)
+r2_train = r2_score(y_train, y_train_pred)
+
+# Print the performance metrics for the training set
+print(f"Training set: Mean squared error: {mse_train}")
+print(f"Training set: R2 score: {r2_train}")
+
+# Predict "bald_prob" for the test set
+y_test_pred = best_xg_reg.predict(X_test)
+
+# Evaluate the model performance on the test set
+mse_test = mean_squared_error(y_test, y_test_pred)
+r2_test = r2_score(y_test, y_test_pred)
+
+# Print the performance metrics for the test set
+print(f"Test set: Mean squared error: {mse_test}")
+print(f"Test set: R2 score: {r2_test}")
 
 #%%[markdown]
 # # Logistic Regression
