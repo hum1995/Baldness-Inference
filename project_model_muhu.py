@@ -230,7 +230,7 @@ for feature, coef in coefficients.items():
 #%%
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-# Assuming 'df_encoded' is your encoded dataframe with all the features
+
 X_all_features = df_encoded.drop('bald_prob', axis=1)
 y_all_features = df_encoded['bald_prob']
 rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
