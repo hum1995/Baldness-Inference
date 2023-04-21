@@ -13,7 +13,6 @@ from bioinfokit.analys import stat
 from statsmodels.tools.tools import add_constant
 from tabulate import tabulate
 import pprint
-
 # create a pretty print function for table
 def pretty_print(message, table):
 
@@ -525,9 +524,15 @@ y_rf_pred = rf_model.predict(X_all_features)
 # Calculate the MSE and RMSE
 mse_rf = mean_squared_error(y_all_features, y_rf_pred)
 rmse_rf = np.sqrt(mse_rf)
+
+# Calculate R-squared value
+r2_rf = rf_model.score(X_all_features, y_all_features)
+
 print("Random Forest Model Summary Statistics:\n")
 print(f"MSE: {mse_rf:.4f}")
 print(f"RMSE: {rmse_rf:.4f}\n")
+print(f"R-squared: {r2_rf:.4f}\n")
+
 
 # %%
 feature_importances = rf_model.feature_importances_
