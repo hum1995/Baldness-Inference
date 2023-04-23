@@ -235,17 +235,8 @@ sm.qqplot(df['bald_prob'], line='s')
 plt.title("QQ Plot for 'bald_prob'")
 plt.show()
 
-# %%[markdown]
-# ### Performing ANOVA
-model = ols('salary ~ education', data=df).fit()
-anova_table = sm.stats.anova_lm(model, typ=2)
-
-# Printing the ANOVA table
-print("ANOVA Table:\n", anova_table)
-
-
 #%%[markdown]
-# ### Performing ANOVA
+# ### Performing one way ANOVA test on the 'age' variable with respect to different provinces.
 provinces = df['province'].unique()
 grouped_data = []
 for province in provinces:
@@ -259,33 +250,20 @@ print("One-way ANOVA Results:")
 print("F-statistic: ", f_stat)
 print("p-value: ", p_value)
 
+#%%
+# One-way ANOVA for 'salary' based on 'job' categories
+job_categories = df['job'].unique()
+grouped_data = []
+for job in job_categories:
+    # Filtering the data for current job category and removing rows with missing salary values
+    data = df[(df['job'] == job) & (~df['salary'].isna())]['salary']
+    if len(data) > 0:  # Checking if data has at least one non-missing value
+        grouped_data.append(data)
+f_stat, p_value = stats.f_oneway(*grouped_data)
 
-#%%[markdown]
-# ### Performing ANOVA on 'age' based on 'gender' groups
-grouped_data = df.groupby('gender')['age']
-f_statistic, p_value = stats.f_oneway(*[grouped_data.get_group(x) for x in grouped_data.groups])
-print("One-way ANOVA Results for 'age' based on 'gender' groups:")
-print(f"F-statistic: {f_statistic:.4f}")
-print(f"p-value: {p_value:.4f}")
-
-
-#%%[markdown]
-# ### Performing ANOVA on 'salary' based on 'job' groups
-grouped_data = df.groupby('job')['salary']
-f_statistic, p_value = stats.f_oneway(*[grouped_data.get_group(x) for x in grouped_data.groups])
-print("One-way ANOVA Results for 'salary' based on 'job' groups:")
-print(f"F-statistic: {f_statistic:.4f}")
-print(f"p-value: {p_value:.4f}")
-
-
-#%%[markdown]
-# ### Performing ANOVA on 'weight' based on 'marital' groups
-grouped_data = df.groupby('marital')['weight']
-f_statistic, p_value = stats.f_oneway(*[grouped_data.get_group(x) for x in grouped_data.groups])
-print("One-way ANOVA Results for 'weight' based on 'marital' groups:")
-print(f"F-statistic: {f_statistic:.4f}")
-print(f"p-value: {p_value:.4f}")
-
+print("One-way ANOVA Results:")
+print("F-statistic: ", f_stat)
+print("p-value: ", p_value)
 
 # %%
 # Scatter plot of stress vs. gender
