@@ -266,20 +266,14 @@ print("F-statistic: ", f_stat)
 print("p-value: ", p_value)
 
 # %%
-# Scatter plot of stress vs. gender
-sns.scatterplot(x='gender', y='stress', data=df)
-plt.xlabel('Gender')
-plt.ylabel('Stress')
-plt.title('Stress vs. Gender')
-plt.show()
+# Creating a cross-tabulation of gender and education level
+ct = pd.crosstab(df['education'], df['gender'])
 
-
-# %%
-# Box plot of educational level vs. gender
-sns.boxplot(x='gender', y='education', data=df)
-plt.xlabel('Gender')
-plt.ylabel('Educational Level')
-plt.title('Educational Level vs. Gender')
+# Plotting the stacked bar chart
+ct.plot(kind='bar', stacked=True)
+plt.title("Distribution of Gender by Education Level")
+plt.xlabel("Education Level")
+plt.ylabel("Count")
 plt.show()
 
 # %%
