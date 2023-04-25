@@ -394,7 +394,7 @@ print("\nModel without 'province':")
 print(model_without_province.summary())
 
 # %%[markdown]
-# after removing "province", the model's adj.R^2 didn't change. 
+# After removing "province", the model's adj.R^2 didn't change. 
 
 #%%
 # Drop the "marital" feature
@@ -863,7 +863,6 @@ print(cmatrix)
 # The recall is out of all incorrect negative and correct positive predictions made, how many are correct positive predicitions?
 # A value close to `1` means not many incorrect negative predictions. A value close to `0` means a lot of false negative.
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score
 print(f"The accuracy score = {accuracy:.2f}")
 print(f"The precision score = {precision:.2f}")
 print(f"The recall score = {recall:.2f}")
@@ -896,9 +895,8 @@ plt.show()
 
 # %%[markdown]
 # # K-Means Clustering
-# We observed that our logistic regression model performed poorly in predicting the `baldness likelihood`. 
-# To understand why a simple logistic regression classification was not succesful, and to gain further insight into the relationship
-# between the variables, we perform a `K-Means Clustering.`
+# To gain further insight into the relationship of the some features with the data, we perform K-means clustering with 
+# selected features
 
 # %%
 from sklearn.cluster import KMeans
@@ -980,25 +978,47 @@ X = df_encoded2.drop(columns=['bald_prob', 'bald_likelihood'])
 X = X[features]
 y = df_encoded2['bald_likelihood']
 X_train, X_test, y_train, y_test = train_test_split(X, y, 
-                                            test_size = 0.20, random_state = 0)
+                                            test_size = 0.33, random_state = 0)
 
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
 
 def KNN(X_train, X_test, y_train, y_test, n_neighbors=5):
-
-    
-    X_train = sc.fit_transform(X_train)
-    X_test = sc.transform(X_test)
 
     classifier = KNeighborsClassifier(n_neighbors = 5, metric = 'minkowski', p = 2)
     classifier.fit(X_train, y_train)
     y_pred = classifier.predict(X_test)
 
+
     cm = confusion_matrix(y_test, y_pred)
-    ac = accuracy_score(y_test,y_pred)
+    accuracy = accuracy_score(y_test,y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
 
-    return classifier, cm, ac
+    return classifier, cm, accuracy, precision, recall
 
-_, cm, ac = KNN(X_train, X_test, y_train, y_test)
+classifier, cm, accuracy, precision, recall = KNN(X_train, X_test, y_train, y_test)
 
+print(f"The accuracy score = {accuracy:.2f}")
+print(f"The precision score = {precision:.2f}")
+print(f"The recall score = {recall:.2f}")
+
+knn_roc_auc = roc_auc_score(y_test, classifier.predict(X_test))
+fpr, tpr, thresholds = roc_curve(y_test, classifier.predict_proba(X_test)[:,1])
+plt.figure(figsize=(9, 8))
+plt.plot(fpr, tpr, label='KNN (area = %0.2f)' % knn_roc_auc)
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('KNN Classification of Baldness Likelihood ROC Curve')
+plt.legend(loc="lower right")
+plt.savefig('knn_ROC')
+plt.show()
+
+# %%[markdown]
+# # Conclusion
+# The KNN model performs about as well as the logistic regression.
 
 # %%
