@@ -792,9 +792,8 @@ print(f"Proportion of Baldness Likelihood 0: {len(df_encoded2[df_encoded2['bald_
 
 
 # %%
+# drop the depedent variablles.
 X = df_encoded2.drop(labels=['bald_prob', 'bald_likelihood'], axis=1)
-y = df_encoded2['bald_likelihood']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
 
 #%%[markdown]
 # ## Features Selection and Model Building
@@ -806,42 +805,49 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random
 # use RFE to select features for the model
 from sklearn.feature_selection import RFE
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import confusion_matrix
+
+from sklearn.preprocessing import StandardScaler
+
+sc = StandardScaler()
+
 import statsmodels.api as sm
 
-logreg = LogisticRegression()
-rfe = RFE(logreg, n_features_to_select=10)
-rfe = rfe.fit(X_train, y_train)
+features = ['hereditary', 'job_Jobless', 'age', 'job_Government Employee', 'gender', 
+             'stress_Low']
 
-X_trans = X_train[rfe.get_feature_names_out()]
-X_test_trans = X_test[rfe.get_feature_names_out()]
+X = X[features]
+y = df_encoded2['bald_likelihood']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
 
 
-model= sm.Logit(y_train,X_trans)
+def lreg(X_train, X_test, y_train, y_test, n_neighbors=5):
 
-result=model.fit()
+    logreg = LogisticRegression()
+    logreg.fit(X_train, y_train)
+    y_pred = logreg.predict(X_test)
 
-print(result.summary2())
-print("We drop the variable weight")
-# %%
-X_trans = X_trans.drop(labels=["weight"], axis = 1)
-X_test_trans = X_test_trans.drop(labels=["weight"], axis = 1)
-model= sm.Logit(y_train, X_trans)
+    cm = confusion_matrix(y_test, y_pred)
+    accuracy = accuracy_score(y_test,y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
 
-result=model.fit()
+    return logreg, y_pred, cm, accuracy, precision, recall
 
-print(result.summary2())
+logreg, y_pred, cm, accuracy, precision, recall = lreg(X_train, X_test, y_train, y_test)
+
 
 # %%[markdown]
-from sklearn.metrics import (confusion_matrix, 
-                           accuracy_score)
 # Model Evaluation
 # 1. Confusion Matrix
-
-model = logreg.fit(X_trans, y_train)
-y_pred = logreg.fit(X_trans, y_train).predict(X_test_trans)
 cmatrix = confusion_matrix(y_pred, y_test) 
+print(" We use the standard deviation of Scikit Learn ")
 print(cmatrix)
-
 #%%[markdown]
 
 # 2. Scores:
@@ -858,9 +864,9 @@ print(cmatrix)
 # A value close to `1` means not many incorrect negative predictions. A value close to `0` means a lot of false negative.
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score
-print(f"The accuracy score = {accuracy_score(y_test, y_pred):.2f}")
-print(f"The precision score = {precision_score(y_test, y_pred):.2f}")
-print(f"The recall score = {recall_score(y_test, y_pred):.2f}")
+print(f"The accuracy score = {accuracy:.2f}")
+print(f"The precision score = {precision:.2f}")
+print(f"The recall score = {recall:.2f}")
 
 #%%[markdown]
 # 2. The ROC Curve
@@ -868,8 +874,8 @@ print(f"The recall score = {recall_score(y_test, y_pred):.2f}")
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
 
-logit_roc_auc = roc_auc_score(y_test, logreg.predict(X_test_trans))
-fpr, tpr, thresholds = roc_curve(y_test, logreg.predict_proba(X_test_trans)[:,1])
+logit_roc_auc = roc_auc_score(y_test, logreg.predict(X_test))
+fpr, tpr, thresholds = roc_curve(y_test, logreg.predict_proba(X_test)[:,1])
 plt.figure(figsize=(9, 8))
 plt.plot(fpr, tpr, label='Logistic Regression (area = %0.2f)' % logit_roc_auc)
 plt.plot([0, 1], [0, 1],'r--')
@@ -883,7 +889,10 @@ plt.savefig('Log_ROC')
 plt.show()
 #%%[markdown]
 # ## Conclusion 
-# The model does not perform well. It is indistinguishable from a model that assigns baldness likelihood 0 or 1 randomly.
+# The model performs well. 
+# * It classifies the baldness likelihood correctly 81% of the time (accuracy). 
+# * A positive prediction is correct 82% of the time (precision).
+# * Out of incorrect negative prediction and correct positive prediction, a positive prediction is correct is 82% of the time (Recall). 
 
 # %%[markdown]
 # # K-Means Clustering
@@ -899,7 +908,7 @@ color_map = {0:'teal', 1:'blue', 2:'magenta'}
 
 def make_clusters(col, nclusters):
 
-    xdata = np.array(X[col])
+    xdata = np.array(df_encoded2[col])
 
     data = list(zip(xdata, y))
     kmeans = KMeans(n_clusters=nclusters)
@@ -910,7 +919,7 @@ def make_clusters(col, nclusters):
 # determine the number of clusters with the Elbow method
 def get_inertia_plots(col):
     inertias = []
-    data = list(zip(X[col], y))
+    data = list(zip(df_encoded2[col], y))
     for i in range(1,11):
         kmeans = KMeans(n_clusters=i)
         kmeans.fit(data)
@@ -931,8 +940,8 @@ print("Based on the Elbow methods, we choose 3 clusters for age and salary.")
 #%%
 # Get clusters for age and salary
 fig, (ax1, ax2) = plt.subplots(1,2, figsize=(12,6))
-ax1.scatter(X['age'],y, c=[color_map[j] for j in make_clusters('age', 3)] )
-ax2.scatter(X['salary'],y, c=[color_map[j] for j in make_clusters('salary', 3)])
+ax1.scatter(df_encoded2['age'],y, c=[color_map[j] for j in make_clusters('age', 3)] )
+ax2.scatter(df_encoded2['salary'],y, c=[color_map[j] for j in make_clusters('salary', 3)])
 ax1.set_xlabel("Age")
 ax1.set_ylabel("Baldness Probabolity")
 ax1.set_title("Bladness probability\n with age")
@@ -950,8 +959,8 @@ print("Based on the Elbow methods, we choose 3 clusters for weight and height.")
 col1 = 'weight'
 col2 = 'height'
 fig, (ax1, ax2) = plt.subplots(1,2, figsize=(12,6))
-ax1.scatter(X[col1],y, c=[color_map[j] for j in make_clusters(col1, 3)])
-ax2.scatter(X[col2],y, c=[color_map[j] for j in make_clusters(col2, 3)])
+ax1.scatter(df_encoded2[col1],y, c=[color_map[j] for j in make_clusters(col1, 3)])
+ax2.scatter(df_encoded2[col2],y, c=[color_map[j] for j in make_clusters(col2, 3)])
 ax1.set_xlabel(f"{col1}")
 ax1.set_ylabel("Baldness Probabolity")
 ax1.set_title(f"Bladness probability\n with {col1}")
@@ -959,3 +968,37 @@ ax2.set_xlabel(f"{col2}")
 ax2.set_ylabel("Baldness Probabolity")
 ax2.set_title(f"Bladness probability\n with {col2}")
 plt.show()
+
+# %%[markdown]
+# # K-Nearest Neighbors 
+from sklearn.neighbors import KNeighborsClassifier
+
+features = ['hereditary', 'job_Jobless', 'age', 'job_Government Employee', 'gender', 
+             'stress_Low']
+
+X = df_encoded2.drop(columns=['bald_prob', 'bald_likelihood'])
+X = X[features]
+y = df_encoded2['bald_likelihood']
+X_train, X_test, y_train, y_test = train_test_split(X, y, 
+                                            test_size = 0.20, random_state = 0)
+
+
+def KNN(X_train, X_test, y_train, y_test, n_neighbors=5):
+
+    
+    X_train = sc.fit_transform(X_train)
+    X_test = sc.transform(X_test)
+
+    classifier = KNeighborsClassifier(n_neighbors = 5, metric = 'minkowski', p = 2)
+    classifier.fit(X_train, y_train)
+    y_pred = classifier.predict(X_test)
+
+    cm = confusion_matrix(y_test, y_pred)
+    ac = accuracy_score(y_test,y_pred)
+
+    return classifier, cm, ac
+
+_, cm, ac = KNN(X_train, X_test, y_train, y_test)
+
+
+# %%
