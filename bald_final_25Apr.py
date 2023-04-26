@@ -277,6 +277,11 @@ plt.ylabel("Count")
 plt.show()
 
 # %%
+
+df['stress'] = df['stress'].replace([1, 2, 3], 'Low')
+df['stress'] = df['stress'].replace([4, 5, 6, 7], 'Medium')
+df['stress'] = df['stress'].replace([8, 9, 10], 'High')
+
 # Filtering the dataframe to remove any missing values for stress, gender, and education
 df_filtered = df.dropna(subset=['stress', 'gender', 'education'])
 
