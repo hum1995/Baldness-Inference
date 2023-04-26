@@ -276,21 +276,15 @@ plt.xlabel("Education Level")
 plt.ylabel("Count")
 plt.show()
 
-# %%
-
-df['stress'] = df['stress'].replace([1, 2, 3], 'Low')
-df['stress'] = df['stress'].replace([4, 5, 6, 7], 'Medium')
-df['stress'] = df['stress'].replace([8, 9, 10], 'High')
-
-# Filtering the dataframe to remove any missing values for stress, gender, and education
-df_filtered = df.dropna(subset=['stress', 'gender', 'education'])
-
-# Bar plot of stress vs. gender with hue for educational level
-sns.barplot(x='gender', y='stress', hue='education', data=df_filtered)
-plt.xlabel('Gender')
-plt.ylabel('Stress')
-plt.title('Stress vs. Gender with Barplot and Hue for Educational Level')
+#%%
+# Bar plot for salary vs. job role
+sns.boxplot(x='job', y='salary', data=df)
+sns.set(rc={'figure.figsize':(11.7,8.27)})
+plt.title('Salary vs. Job Role with Boxplot')
+plt.xlabel('Job Role')
+plt.ylabel('Salary')
 plt.show()
+
 
 # %%
 # Filtering the dataframe to remove any missing values for gender and education
