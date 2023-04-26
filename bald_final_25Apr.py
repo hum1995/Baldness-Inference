@@ -285,6 +285,17 @@ plt.xlabel('Job Role')
 plt.ylabel('Salary')
 plt.show()
 
+#%%
+sns.set(style="whitegrid")
+
+# Creating the violin plot
+sns.violinplot(x='stress', y='bald_prob', hue='gender', data=df)
+
+# Adding labels and titles
+plt.title('Stress vs. Baldness with Violinplot and Hue for Gender')
+plt.xlabel('Stress Levels')
+plt.ylabel('Bald Probability')
+plt.show()
 
 # %%
 # Filtering the dataframe to remove any missing values for gender and education
