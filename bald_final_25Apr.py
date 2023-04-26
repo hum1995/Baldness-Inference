@@ -277,7 +277,7 @@ plt.ylabel("Count")
 plt.show()
 
 #%%
-# Bar plot for salary vs. job role
+# Box plot for salary vs. job role
 sns.boxplot(x='job', y='salary', data=df)
 sns.set(rc={'figure.figsize':(11.7,8.27)})
 plt.title('Salary vs. Job Role with Boxplot')
