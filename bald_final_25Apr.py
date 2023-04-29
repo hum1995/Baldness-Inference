@@ -202,8 +202,6 @@ plt.ylabel('Baldness Probability')
 plt.show()
 
 #%%[markdown]
-
-#%%[markdown]
 # ### QQ plot for 'age' column
 sm.qqplot(df['age'], line='s')
 plt.title("QQ Plot for 'age'")
@@ -234,6 +232,29 @@ plt.show()
 sm.qqplot(df['bald_prob'], line='s')
 plt.title("QQ Plot for 'bald_prob'")
 plt.show()
+
+#%%
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
+model = ols('bald_prob ~ C(shampoo)', data=df).fit()
+anova_table = sm.stats.anova_lm(model, typ=2)
+print(anova_table)
+
+#%%
+
+education_levels = df['education'].unique()
+grouped_data = []
+for level in education_levels:
+    # Filtering the data for current education level and removing rows with missing bald_prob values
+    data = df[(df['education'] == level) & (~df['bald_prob'].isna())]['bald_prob']
+    if len(data) > 0:  # Checking if data has at least one non-missing value
+        grouped_data.append(data)
+f_stat, p_value = stats.f_oneway(*grouped_data)
+
+print("One-way ANOVA Results:")
+print("F-statistic: ", f_stat)
+print("p-value: ", p_value)
 
 #%%[markdown]
 # ### Performing one way ANOVA test on the 'age' variable with respect to different provinces.
@@ -266,6 +287,10 @@ print("F-statistic: ", f_stat)
 print("p-value: ", p_value)
 
 # %%
+
+df['gender'].replace(0, 'female', inplace=True)
+df['gender'].replace(1, 'male', inplace=True)
+
 # Creating a cross-tabulation of gender and education level
 ct = pd.crosstab(df['education'], df['gender'])
 
@@ -276,16 +301,25 @@ plt.xlabel("Education Level")
 plt.ylabel("Count")
 plt.show()
 
+
 #%%
 # Box plot for salary vs. job role
+
 sns.boxplot(x='job', y='salary', data=df)
 sns.set(rc={'figure.figsize':(11.7,8.27)})
 plt.title('Salary vs. Job Role with Boxplot')
 plt.xlabel('Job Role')
 plt.ylabel('Salary')
 plt.show()
+df.groupby('job')['salary'].mean()
 
 #%%
+
+# Categorizing stress to three categories: Low, Medium, High
+df['stress'] = df['stress'].replace([1, 2, 3], 'Low')
+df['stress'] = df['stress'].replace([4, 5, 6, 7], 'Medium')
+df['stress'] = df['stress'].replace([8, 9, 10], 'High')
+
 sns.set(style="whitegrid")
 
 # Creating the violin plot
@@ -296,6 +330,7 @@ plt.title('Stress vs. Baldness with Violinplot and Hue for Gender')
 plt.xlabel('Stress Levels')
 plt.ylabel('Bald Probability')
 plt.show()
+
 
 # %%
 # Filtering the dataframe to remove any missing values for gender and education
@@ -333,6 +368,7 @@ outliers = df[df['age_zscore'] > zscore_threshold]
 
 # Printing the identified outliers
 print(outliers)
+
 
 # %%
 #%%[markdown]
