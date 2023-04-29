@@ -202,8 +202,6 @@ plt.ylabel('Baldness Probability')
 plt.show()
 
 #%%[markdown]
-
-#%%[markdown]
 # ### QQ plot for 'age' column
 sm.qqplot(df['age'], line='s')
 plt.title("QQ Plot for 'age'")
@@ -234,6 +232,29 @@ plt.show()
 sm.qqplot(df['bald_prob'], line='s')
 plt.title("QQ Plot for 'bald_prob'")
 plt.show()
+
+#%%
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
+model = ols('bald_prob ~ C(shampoo)', data=df).fit()
+anova_table = sm.stats.anova_lm(model, typ=2)
+print(anova_table)
+
+#%%
+
+education_levels = df['education'].unique()
+grouped_data = []
+for level in education_levels:
+    # Filtering the data for current education level and removing rows with missing bald_prob values
+    data = df[(df['education'] == level) & (~df['bald_prob'].isna())]['bald_prob']
+    if len(data) > 0:  # Checking if data has at least one non-missing value
+        grouped_data.append(data)
+f_stat, p_value = stats.f_oneway(*grouped_data)
+
+print("One-way ANOVA Results:")
+print("F-statistic: ", f_stat)
+print("p-value: ", p_value)
 
 #%%[markdown]
 # ### Performing one way ANOVA test on the 'age' variable with respect to different provinces.
@@ -266,6 +287,9 @@ print("F-statistic: ", f_stat)
 print("p-value: ", p_value)
 
 # %%
+df['gender'].replace(0, 'female', inplace=True)
+df['gender'].replace(1, 'male', inplace=True)
+
 # Creating a cross-tabulation of gender and education level
 ct = pd.crosstab(df['education'], df['gender'])
 
@@ -276,16 +300,34 @@ plt.xlabel("Education Level")
 plt.ylabel("Count")
 plt.show()
 
-# %%
-# Filtering the dataframe to remove any missing values for stress, gender, and education
-df_filtered = df.dropna(subset=['stress', 'gender', 'education'])
-
-# Bar plot of stress vs. gender with hue for educational level
-sns.barplot(x='gender', y='stress', hue='education', data=df_filtered)
-plt.xlabel('Gender')
-plt.ylabel('Stress')
-plt.title('Stress vs. Gender with Barplot and Hue for Educational Level')
+#%%
+# Box plot for salary vs. job role
+sns.boxplot(x='job', y='salary', data=df)
+sns.set(rc={'figure.figsize':(11.7,8.27)})
+plt.title('Salary vs. Job Role with Boxplot')
+plt.xlabel('Job Role')
+plt.ylabel('Salary')
 plt.show()
+df.groupby('job')['salary'].mean()
+
+#%%
+
+# Categorizing stress to three categories: Low, Medium, High
+df['stress'] = df['stress'].replace([1, 2, 3], 'Low')
+df['stress'] = df['stress'].replace([4, 5, 6, 7], 'Medium')
+df['stress'] = df['stress'].replace([8, 9, 10], 'High')
+
+sns.set(style="whitegrid")
+
+# Creating the violin plot
+sns.violinplot(x='stress', y='bald_prob', hue='gender', data=df)
+
+# Adding labels and titles
+plt.title('Stress vs. Baldness with Violinplot and Hue for Gender')
+plt.xlabel('Stress Levels')
+plt.ylabel('Bald Probability')
+plt.show()
+
 
 # %%
 # Filtering the dataframe to remove any missing values for gender and education
@@ -311,7 +353,8 @@ plt.title('Correlation Heatmap for Continuous Variables')
 plt.show()
 
 
-# %%
+# %%[markdown]
+# Dropping the outliers
 # Calculating the Z-score for 'age'
 df['age_zscore'] = (df['age'] - df['age'].mean()) / df['age'].std()
 
@@ -321,13 +364,11 @@ zscore_threshold = 2  # or any other value you prefer
 # Identifying outliers based on Z-score
 outliers = df[df['age_zscore'] > zscore_threshold]
 
-# Printing the identified outliers
-print(outliers)
+print("Outliers have been dropped succesfully")
 
-# %%
+
 #%%[markdown]
 ## Modeling
-print(df)
 # %%
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -335,6 +376,8 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import OneHotEncoder
 
 # Encoding categorical variables
+df['gender'].replace('female', 0, inplace=True)
+df['gender'].replace('male', 1, inplace=True)
 cat_vars = ['job', 'province', 'shampoo', 'education', 'stress']
 enc = OneHotEncoder(drop='first', sparse=False)
 encoded_cat_vars = pd.DataFrame(enc.fit_transform(df[cat_vars]), columns=enc.get_feature_names_out(cat_vars))
@@ -852,14 +895,14 @@ print(cmatrix)
 
 # 2. Scores:
 
-# 1. $\text{Accuracy} = \frac{TP}{\text{Total numbre of predictions}}$ <br>
+# 1. $\text{Accuracy} = \frac{TP + TN}{\text{Total numbre of predictions}}$ <br>
 # The accuracy measures how many positive predictions are actually correct out of all predictions made. 
 
-# 2. $\text{Precision} = \frac{TP}{FP + TP}$
+# 2. $\text{Precision} = \frac{TP}{TP + FP}$
 # The precision is how many positive predictions are correct out of all positive predicitions made.
 # A value close to `1` means not many False positive. A value close to `0` means a lot of False positive predictions.
 
-# * $\text{Recall} = \frac{TP}{FN + TP}$
+# * $\text{Recall} = \frac{TP}{TP + FN}$
 # The recall is out of all incorrect negative and correct positive predictions made, how many are correct positive predicitions?
 # A value close to `1` means not many incorrect negative predictions. A value close to `0` means a lot of false negative.
 
@@ -1018,7 +1061,23 @@ plt.savefig('knn_ROC')
 plt.show()
 
 # %%[markdown]
-# # Conclusion
+# ## Conclusion of Classification Models
 # The KNN model performs about as well as the logistic regression.
+
+# %%[markdown]
+# # Conclusion
+
+# * Back to the SMART questions: Are certain features statistically significant with baldness probability? <br>
+#
+# Yes, based on the OLS model result, “age”, “gender”, “salary”, “hereditary”, “smoker”, “job_Goverment Employee”, “job_jobless” and “stress_low” and “stress_medium” are significant variables with baldness probability at 95% confidence interval.
+#
+# * What are the most associated features with baldness? <br>
+#
+# Based on the RF and XGBoost model, they have identical results. Most associated features with baldness ranking from high to low are: “hereditary”, “job_jobless”, “age”, “smoker”, “job_Government Employee”, “gender” and “stress_low”. Note that “hereditary” alone contributed to approximately 35% importance in the target variable by XGboost model. While in the RF model, ”hereditary” was still the most important variable, but the number was around 25%.
+#
+# * What models have the best power of explanation?
+#
+# Because the R squared value for the test set was 0.79 for the RF model and 0.85 for the XGBoost model, we can say that the XGBoost model in our case had the best power of explanation. 
+
 
 # %%
